@@ -1,12 +1,14 @@
 import time
 import re
 
+
 from rdmdate import parsedate_myl
 
 def parsedate(t):
-  if type(t) in [int,float]:
+  try:
+    float(t)
     return t
-  else:
+  except ValueError:
     return parsedate_myl(t)
 
 def dumpdate(t,fmt='%Y-%m-%d %H:%M:%S.SSS'):
@@ -14,17 +16,18 @@ def dumpdate(t,fmt='%Y-%m-%d %H:%M:%S.SSS'):
   tf=t-ti
   s=time.strftime(fmt,time.localtime(t))
   if 'SSS' in s:
-    s=s.replace('SSS','%03d'%round(tf*1000))
+    s=s.replace('SSS','%03d'%(tf*1000))
   return s
 
 
-from objdebug import ObjDebug
+#from objdebug import ObjDebug as object
 
-class SearchName(ObjDebug,object):
+class SearchName(object):
   def search(self,regexp):
     r=re.compile(regexp,re.IGNORECASE)
-    res=[ l for l in self.names if r.search(l) is not None]
+    res=[ l for l in self.get_names() if r.search(l) is not None]
     return res
+  __floordiv__=search
   def _parsenames(self,names):
     if not hasattr(names,'__iter__'):
       out=[]

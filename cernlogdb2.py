@@ -1,26 +1,34 @@
 import re
+import os
+import time
+import cPickle
+
+import numpy as np
 
 from cernlogdb import dbget
 from dataquery import DataQuery
-from rdmdate import parsedate_myl as parsedate
+
+from localdate import parsedate,dumpdate,SearchName
 
 
-
-_varnames="""\
-LHC.BQBBQ.CONTINUOUS.B1:FFT_DATA_H
-LHC.BQBBQ.CONTINUOUS.B1:FFT_DATA_V
-LHC.BQBBQ.CONTINUOUS.B2:FFT_DATA_H
-LHC.BQBBQ.CONTINUOUS.B2:FFT_DATA_V
-LHC.BQBBQ.CONTINUOUS.B1:ACQ_DATA_H
-LHC.BQBBQ.CONTINUOUS.B1:ACQ_DATA_V
-LHC.BQBBQ.CONTINUOUS.B2:ACQ_DATA_H
-LHC.BQBBQ.CONTINUOUS.B2:ACQ_DATA_V
-"""
-
-from objdebug import ObjDebug
+varlistfn='/home/rdemaria/work/rdmstores/cernlogdb_varlist.pky'
+varlist=cPickle.load(open(varlistfn))
 
 
-class CernLogDB(ObjDebug,object):
+#def readvarlist(base='/home/rdemaria/work/rdmstores/cerndbnames'):
+#  out=[]
+#  for fn in os.listdir(base):
+#    if fn.isalpha():
+#      ffn=os.path.join(base,fn)
+#      if os.path.isfile(ffn):
+#        out.extend([i.strip() for i in open(ffn).readlines()])
+#      elif os.path.isdir(ffn):
+#        out.extend(readvarlist(ffn))
+#  out=list(set(out))
+#  return out
+
+#from objdebug import ObjDebug as object
+class CernLogDB(SearchName,object):
   conf_template="""\
 CLIENT_NAME=%s
 APPLICATION_NAME=%s
@@ -28,9 +36,8 @@ DATASOURCE_PREFERENCES=%s
 TIMEZONE=%s
 FILE_DIRECTORY=%s
 UNIX_TIME_OUTPUT=%s"""
-  def search(self,regexp):
-    r=re.compile(regexp,re.IGNORECASE)
-    return r.findall(_varnames)
+  def get_names(self):
+    return varlist
   def __repr__(self):
     return "CernLogDB('%s')"%self.datasource
   def __init__(self,
@@ -55,7 +62,7 @@ UNIX_TIME_OUTPUT=%s"""
        MEASDB_PRO_DEFAULT, MEASDB_DEV_DEFAULT,
        LHCLOG_PRO_ONLY, LHCLOG_TEST_ONLY, MEASDB_PRO_ONLY"""
     self.datasource=datasource
-  def get(self,names,t1,t2,step=None,scale=None):
+  def get(self,names,t1=None,t2=None,step=None,scale=None,debug=False):
     """Query the CERN measurement database and return QueryData
     names:  name of the variables in the database: comma separated or list
     t1,t2:  start and end time as string in the %Y-%m-%d %H:%M:%S.SSS format
@@ -68,26 +75,61 @@ UNIX_TIME_OUTPUT=%s"""
       <size> is one of SECOND, MINUTE, HOUR, DAY, WEEK, MONTH, YEAR
       <alg> one of AVG, MIN, MAX, REPEAT, INTERPOLATE, SUM, COUNT
     """
-    t1=parsedate(t1)
-    t2=parsedate(t2)
-    if not hasattr(names,'__iter__'):
-      out=[]
-      for name in names.split(','):
-        if name.startswith('/'):
-          out.extend(self.search(name[1:]))
-        else:
-          out.append(name)
-      names=out
+    method='DS'
+    if t2 is None:
+      t2=time.time()
+    if t1 is None:
+      t1=t2-1e-3
+      method='LD'
+    t1=dumpdate(parsedate(t1))
+    t2=dumpdate(parsedate(t2))
+    names=self._parsenames(names)
+
+    print "CernLogDB: querying\n  %s"%'\n  '.join(names)
+    print "CernLogDB: '%s' <--> '%s'"% (t1,t2)
+    print "CernLogDB: options %s %s"% (step,scale)
     res=dbget(names,t1,t2,step=step,scale=scale,
                exe=self.exe_path,conf=None,
                client_name=self.client_name,
                app_name=self.app_name,
                datasource=self.datasource,
-               timezone=self.timezone)
-    data=dict( [ (k,res[k]) for k in names ])
-    dq=DataQuery(self,names,t1,t2,data,step=step,scale=scale)
+               timezone=self.timezone,
+               method=method)
+    log='\n'.join(res['log'])
+    if debug:
+      print log
+    if method=='LD':
+      res=parse_ld(log)
+    data={}
+    bad=[]
+    for k in names:
+      if k in res:
+        data[k]=res[k]
+      else:
+        bad.append(k)
+    if len(bad)>0:
+      raise IOError, "CernLogDB %s not retrieved" %','.join(bad)
+    dq=DataQuery(self,names,parsedate(t1),parsedate(t2),data,step=step,scale=scale)
+    if method=='LD':
+      dq.trim()
     return dq
 
+
+
+def parse_ld(s):
+  data={}
+  for line in s.split('\n'):
+    if line.startswith('Variable:'):
+      name=line.strip().split('Variable: ')[1]
+      t,v=np.zeros(1,dtype=float),np.zeros(1,dtype=float)
+      data[name]=[t,v]
+    elif 'Timestamp' in line and 'Value' in line:
+      no,ts,val=line.split(': ')
+      ts=parsedate(ts.split('"')[1])
+      val=float(val.strip())
+      t[0]=ts
+      v[0]=val
+  return data
 
 
 

@@ -62,13 +62,14 @@ UNIX_TIME_OUTPUT=%s"""
        MEASDB_PRO_DEFAULT, MEASDB_DEV_DEFAULT,
        LHCLOG_PRO_ONLY, LHCLOG_TEST_ONLY, MEASDB_PRO_ONLY"""
     self.datasource=datasource
-  def get(self,names,t1=None,t2=None,step=None,scale=None,debug=False):
+  def get(self,names,t1=None,t2=None,step=None,scale=None,debug=False,types=(float,float)):
     """Query the CERN measurement database and return QueryData
     names:  name of the variables in the database: comma separated or list
     t1,t2:  start and end time as string in the %Y-%m-%d %H:%M:%S.SSS format
             or unix time
     step:   For multiple file request '<n> <size>'
     scale:  For scaling algoritm '<n> <size> <alg>'
+    types:  type to convert timestamp and data. If None, no concatenation is performed
 
     where:
       <n> is an integer number
@@ -79,7 +80,8 @@ UNIX_TIME_OUTPUT=%s"""
     if t2 is None:
       t2=time.time()
     if t1 is None:
-      t1=t2-1e-3
+      t1=t2-1
+      print t1,t2
       method='LD'
     t1=dumpdate(parsedate(t1))
     t2=dumpdate(parsedate(t2))
@@ -94,12 +96,13 @@ UNIX_TIME_OUTPUT=%s"""
                app_name=self.app_name,
                datasource=self.datasource,
                timezone=self.timezone,
-               method=method)
+               method=method,
+               types=types)
     log='\n'.join(res['log'])
     if debug:
       print log
     if method=='LD':
-      res=parse_ld(log)
+      res=parse_ld(log,types)
     data={}
     bad=[]
     for k in names:
@@ -108,27 +111,54 @@ UNIX_TIME_OUTPUT=%s"""
       else:
         bad.append(k)
     if len(bad)>0:
+      print log
       raise IOError, "CernLogDB %s not retrieved" %','.join(bad)
     dq=DataQuery(self,names,parsedate(t1),parsedate(t2),data,step=step,scale=scale)
     if method=='LD':
       dq.trim()
     return dq
+  def lhc_fillnumber(self,t1=None,t2=None):
+    if t2 is None:
+      t2=time.time()
+    if t1 is None:
+      t1=t2-365*24*3600
+    data=self.get('HX:FILLN',t1,t2)
+    duration=np.diff(np.r_[data.a0,t2])
+    fmt="%6d '%s' %8.2f h"
+    for fillnu,beg,duration in zip(data.a1,data.a0,duration):
+      dumpdate(beg)
+      print fmt%(fillnu,dumpdate(beg),duration/3600.)
+#  def lhc_intensity_attiming(self,timing,delta=60,
+#      int1='LHC.BCTFR.A6R4.B1:BEAM_INTENSITY',
+#      int2='LHC.BCTFR.A6R4.B2:BEAM_INTENSITY'):
+#    pass
 
 
 
-def parse_ld(s):
+
+
+
+def parse_ld(s,types=(float,float)):
   data={}
+  ttype,vtype=types
   for line in s.split('\n'):
     if line.startswith('Variable:'):
       name=line.strip().split('Variable: ')[1]
-      t,v=np.zeros(1,dtype=float),np.zeros(1,dtype=float)
+      #t,v=np.zeros(1,dtype=float),np.zeros(1,dtype=float)
+      t,v=[],[]
       data[name]=[t,v]
     elif 'Timestamp' in line and 'Value' in line:
       no,ts,val=line.split(': ')
       ts=parsedate(ts.split('"')[1])
-      val=float(val.strip())
-      t[0]=ts
-      v[0]=val
+      val=val.strip()
+      if val.startswith('{'):
+        val=val[1:-1].split(',')
+      t.append(ts)
+      v.append(val)
+  for name,(t,v) in data.items():
+    t=np.array(t,dtype=ttype)
+    v=np.array(v,dtype=vtype)
+    data[name]=[t,v]
   return data
 
 

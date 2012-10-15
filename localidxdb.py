@@ -16,6 +16,7 @@ class LookUp(object):
   pass
 
 def mkkeyword(s):
+  s=s.replace('.','_').replace(':','_')
   return "".join(x for x in s if x.isalpha() or x.isdigit() or x=='_')
 
 #from objdebug import ObjDebug as object
@@ -34,10 +35,6 @@ class LocalIdxDB(SearchName,object):
       table=IdxStore(dirname)
       self.tables[table.name]=table
       setattr(self.lookup,mkkeyword(table.name),table)
-  def rebalance(self,maxpagesize):
-    for name in self.tables.keys():
-      db=self.tables[name]
-      db.sync(maxpagesize)
   def get(self,names,t1,t2):
     """Query local database are return QueryData
     names:  name od tables, comma separated or list
@@ -60,10 +57,19 @@ class LocalIdxDB(SearchName,object):
     if name in self.tables:
       db=self.tables[name]
     else:
-      db=IdxStore(os.path.join(self.dirname,mkkeyword(name)),name=name)
+      db=IdxStore(os.path.join(self.dirname,mkkeyword(name)))
+      db.name=name
       self.tables[name]=db
       setattr(self.lookup,mkkeyword(name),name)
     db.store(idx,val)
+  def rebalance(self,tablename,maxpagesize):
+    db=self.tables[tablename]
+    db.maxpagesize=maxpagesize
+    db.rebalance()
+  def prune(self,tablename):
+    db=self.tables[tablename]
+    db.prune()
+
 
 
 

@@ -6,6 +6,8 @@ from rdmdate import parsedate_myl
 
 def parsedate(t):
   try:
+    if type(t) is complex:
+      t=time.time()-t.imag
     float(t)
     return t
   except ValueError:

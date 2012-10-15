@@ -59,10 +59,8 @@ def int2keyword(i):
 def subdict(d,names):
   return dict([(k,d[k]) for k in names if k in d])
 
-#from objdebug import ObjDebug as object
+from objdebug import ObjDebug as object
 class DataQuery(SearchName,object):
-  def get_names(self):
-    return self.names
   def __init__(self,source,names,t1,t2,data,**options):
     self.source=source
     self.names=names
@@ -78,10 +76,6 @@ class DataQuery(SearchName,object):
     return [subdict(self._cachedflatten,names)]
   def _setcache(self,lst):
     self._cachedflatten,=lst
-  def copy(self):
-    dq=DataQuery(self.source,self.names,self.t1,self.t2,
-                 self.data,**self.options)
-    return dq
   def _setshortcuts(self):
     if self.data:
       for i,name in  enumerate(self.names):
@@ -89,11 +83,21 @@ class DataQuery(SearchName,object):
         idx,val=self.data[name]
         setattr(self,s+'0',idx)
         setattr(self,s+'1',val)
-  def new(self,source,**options):
-    dq=DataQuery(source,self.names,self.t1,self.t2,{},**options)
-    dq.reload()
-    return dq
+  def __repr__(self):
+    out=[]
+    out.append("DataQuery %s"%str(self.source))
+    out.append("  '%s' <--> '%s'" % (dumpdate(self.t1),dumpdate(self.t2)))
+    for i,name in enumerate(self.names):
+      idx,val=self.data[name]
+      typ="  %s: %s%s"%(int2keyword(i),name,val.shape)
+      if len(idx)>0:
+        typ+=" <%gs|%gs>"%(idx[0]-self.t1,self.t2-idx[-1])
+      out.append(typ)
+    return '\n'.join(out)
+  def get_names(self):
+    return self.names
   def reload(self,t1=None,t2=None):
+    """reload data"""
     if t1 is None:
       t1=self.t1
     if t2 is None:
@@ -117,6 +121,14 @@ class DataQuery(SearchName,object):
       self.t1=min(t1)
       self.t2=max(t2)
     return self
+  def append(self,t1,t2):
+    dq=self.source.get(self.names,t1,t2,**self.options)
+    for name in self.names:
+      idx,val=self.data[name]
+      nidx,nval=dq.data[name]
+      ridx=np.concatenate([idx,nidx],axis=0)
+      rval=np.concatenate([val,nval],axis=0)
+      self.data[name]=ridx,rval
   def extend(self,before=None,after=None,absolute=False,eps=1e-6):
     """Extend dataset by <before> sec and <after> secs"""
     if after is not None:
@@ -183,17 +195,6 @@ class DataQuery(SearchName,object):
     dq=DataQuery(self.source,names,self.t1,self.t2,newdata,**self.options)
     dq._setcache(self._getcache(names))
     return dq
-  def __repr__(self):
-    out=[]
-    out.append("DataQuery %s"%str(self.source))
-    out.append("  '%s' <--> '%s'" % (dumpdate(self.t1),dumpdate(self.t2)))
-    for i,name in enumerate(self.names):
-      idx,val=self.data[name]
-      typ="  %s: %s%s"%(int2keyword(i),name,val.shape)
-      if len(idx)>0:
-        typ+=" <%gs|%gs>"%(idx[0]-self.t1,self.t2-idx[-1])
-      out.append(typ)
-    return '\n'.join(out)
   def store(self,source):
     for name in self.names:
       idx,val=self.data[name]
@@ -215,11 +216,37 @@ class DataQuery(SearchName,object):
     dq=self.copy()
     dq.data=datanew
     return dq
-  def plot_data2D(self):
+  def copy(self,**argsn):
+    """copy source including data"""
+    dq=DataQuery(self.source,self.names,self.t1,self.t2,
+                 self.data,**self.options)
+    dq.__dict__.update(argsn)
+    return dq
+  def new(self,**argsn):
+    """copy source and reloading data"""
+    dq=self.copy(**argsn)
+    dq.reload()
+    return dq
+  def plot_2d(self,vscale='auto',rel_time=False,date_axes=True):
     for i,name in enumerate(self.names):
       t,v=self.data[name]
-      pl.plot(t,v,'-',label=name)
-      set_xaxis_date()
+      if rel_time==True:
+        t=t-t[0]
+      if vscale=='auto':
+        vmax=np.max(abs(v))
+        vexp=-np.floor(np.log10(vmax))
+        lbl='$10^{%d}$ %s'%(vexp,name)
+        vscale=10**vexp
+      elif float(vscale)==1:
+        lbl=name
+        vscale=1
+      else:
+        lbl='$%g$ %s'%(vscale,name)
+      pl.plot(t,v*vscale,'-',label=lbl)
+      if date_axes==True:
+        set_xaxis_date()
+      else:
+        pl.xlabel("time [sec]")
       pl.legend(loc=0)
       pl.grid(True)
   subplotchoices={
@@ -227,7 +254,7 @@ class DataQuery(SearchName,object):
     4:(2,2),5:(2,3),6:(2,3),
     7:(3,3),8:(3,3),9:(3,3)}
   def plot_specgramflat(self,NFFT=1024,Fs=1,noverlap=0,fmt='%H:%M:%S',
-                       samewindow=False):
+                       samewindow=False,realtime=True):
     row,col=self.subplotchoices[len(self.names)]
     pl.clf()
     for i,name in enumerate(self.names):
@@ -235,15 +262,19 @@ class DataQuery(SearchName,object):
       t,val=self.data[name]
       val=self.flatten(name)
       print "dq.flatten('%s')"%name
-      pl.specgram(val,NFFT=NFFT,Fs=Fs,noverlap=noverlap)
+      im=pl.specgram(val,NFFT=NFFT,Fs=Fs,noverlap=noverlap)[-1]
       pl.title(name)
-      if samewindow:
-        tticks=np.linspace(self.t1,self.t2,5)
+      if realtime:
+        im.set_extent([t[0],t[0]+len(val)/float(Fs),0,float(Fs)/2])
+        set_xaxis_date()
       else:
-        tticks=np.linspace(t[0],t[-1],5)
-      sticks=[ dumpdate(round(t), fmt) for t in tticks]
-      xticks=np.linspace(0,len(val)/Fs,5)
-      pl.xticks(xticks,sticks)
+        if samewindow:
+          tticks=np.linspace(self.t1,self.t2,5)
+        else:
+          tticks=np.linspace(t[0],t[-1],5)
+        sticks=[ dumpdate(round(t), fmt) for t in tticks]
+        xticks=np.linspace(0,len(val)/Fs,5)
+        pl.xticks(xticks,sticks)
 
 
 

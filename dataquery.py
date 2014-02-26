@@ -50,16 +50,16 @@ def get_xlim_date():
 
 def int2keyword(i):
   out=''
-  while i>=(26)**len(out)-1:
+  while i>=(18)**len(out)-1:
     pos=len(out)
-    digit=(i//(26**pos))%26
+    digit=(i//(18**pos))%18
     out+=chr(digit+97)
   return out
 
 def subdict(d,names):
   return dict([(k,d[k]) for k in names if k in d])
 
-from objdebug import ObjDebug as object
+#from objdebug import ObjDebug as object
 class DataQuery(SearchName,object):
   def __init__(self,source,names,t1,t2,data,**options):
     self.source=source
@@ -178,6 +178,12 @@ class DataQuery(SearchName,object):
       self.names.append(name)
     self._setshortcuts()
     return self
+  def add_ext_set(self,name,tvec,vec):
+    """Add data set from an external source"""
+    self.data[name]=(tvec,vec)
+    self.names.append(name)
+    self._setshortcuts()
+    return self
   def del_sets(self,names):
     """Delete names in the same interval"""
     names=self._parsenames(names)
@@ -234,15 +240,20 @@ class DataQuery(SearchName,object):
         t=t-t[0]
       if vscale=='auto':
         vmax=np.max(abs(v))
-        vexp=-np.floor(np.log10(vmax))
-        lbl='$10^{%d}$ %s'%(vexp,name)
-        vscale=10**vexp
-      elif float(vscale)==1:
+        vexp=np.floor(np.log10(vmax))
+        if abs(vexp)>50:
+          lbl=name
+          vvscale=1
+        else:
+          lbl='$10^{%d}$ %s'%(int(vexp),name)
+          vvscale=10**-vexp
+      elif float(vscale)==1.0:
         lbl=name
-        vscale=1
+        vvscale=1
       else:
         lbl='$%g$ %s'%(vscale,name)
-      pl.plot(t,v*vscale,'-',label=lbl)
+        vvscale=vscale
+      pl.plot(t,v*vvscale,'-',label=lbl)
       if date_axes==True:
         set_xaxis_date()
       else:
@@ -254,9 +265,8 @@ class DataQuery(SearchName,object):
     4:(2,2),5:(2,3),6:(2,3),
     7:(3,3),8:(3,3),9:(3,3)}
   def plot_specgramflat(self,NFFT=1024,Fs=1,noverlap=0,fmt='%H:%M:%S',
-                       samewindow=False,realtime=True):
+                       realtime=False):
     row,col=self.subplotchoices[len(self.names)]
-    pl.clf()
     for i,name in enumerate(self.names):
       pl.subplot(row,col,i)
       t,val=self.data[name]
@@ -266,15 +276,21 @@ class DataQuery(SearchName,object):
       pl.title(name)
       if realtime:
         im.set_extent([t[0],t[0]+len(val)/float(Fs),0,float(Fs)/2])
-        set_xaxis_date()
       else:
-        if samewindow:
-          tticks=np.linspace(self.t1,self.t2,5)
-        else:
-          tticks=np.linspace(t[0],t[-1],5)
-        sticks=[ dumpdate(round(t), fmt) for t in tticks]
-        xticks=np.linspace(0,len(val)/Fs,5)
-        pl.xticks(xticks,sticks)
+        im.set_extent([t[0],t[-1],0,0.5])
+      set_xaxis_date()
+  def plot_specgramflat_simple(self,name,NFFT=1024,Fs=1,noverlap=0,
+      fmt='%H:%M:%S', realtime=False):
+    t,val=self.data[name]
+    val=self.flatten(name)
+    print "dq.flatten('%s')"%name
+    im=pl.specgram(val,NFFT=NFFT,Fs=Fs,noverlap=noverlap)[-1]
+    pl.title(name)
+    if realtime:
+      im.set_extent([t[0],t[0]+len(val)/float(Fs),0,float(Fs)/2])
+    else:
+      im.set_extent([t[0],t[-1],0,0.5])
+    set_xaxis_date()
 
 
 

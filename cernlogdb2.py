@@ -62,7 +62,7 @@ UNIX_TIME_OUTPUT=%s"""
        MEASDB_PRO_DEFAULT, MEASDB_DEV_DEFAULT,
        LHCLOG_PRO_ONLY, LHCLOG_TEST_ONLY, MEASDB_PRO_ONLY"""
     self.datasource=datasource
-  def get(self,names,t1=None,t2=None,step=None,scale=None,debug=False,types=(float,float)):
+  def get(self,names,t1=None,t2=None,step=None,scale=None,debug=False,types=(float,float),method='DS',verbose=True):
     """Query the CERN measurement database and return QueryData
     names:  name of the variables in the database: comma separated or list
     t1,t2:  start and end time as string in the %Y-%m-%d %H:%M:%S.SSS format
@@ -76,7 +76,6 @@ UNIX_TIME_OUTPUT=%s"""
       <size> is one of SECOND, MINUTE, HOUR, DAY, WEEK, MONTH, YEAR
       <alg> one of AVG, MIN, MAX, REPEAT, INTERPOLATE, SUM, COUNT
     """
-    method='DS'
     if t2 is None:
       t2=time.time()
     if t1 is None:
@@ -86,10 +85,10 @@ UNIX_TIME_OUTPUT=%s"""
     t1=dumpdate(parsedate(t1))
     t2=dumpdate(parsedate(t2))
     names=self._parsenames(names)
-
-    print "CernLogDB: querying\n  %s"%'\n  '.join(names)
-    print "CernLogDB: '%s' <--> '%s'"% (t1,t2)
-    print "CernLogDB: options %s %s"% (step,scale)
+    if verbose:
+      print "CernLogDB: querying\n  %s"%'\n  '.join(names)
+      print "CernLogDB: '%s' <--> '%s'"% (t1,t2)
+      print "CernLogDB: options %s %s"% (step,scale)
     res=dbget(names,t1,t2,step=step,scale=scale,
                exe=self.exe_path,conf=None,
                client_name=self.client_name,

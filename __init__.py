@@ -23,7 +23,7 @@ class Autoload(object):
     return ga(self,k)
 
 
-lcldb =Autoload(LocalIdxDB,"/home/rdemaria/pcbe13028/datastore")
+lcldb =Autoload(LocalIdxDB,"/home/rdemaria/data/lhcfilldata/datadb")
 logdb =Autoload(CernLogDB,datasource='LHCLOG_PRO_DEFAULT')
 measdb=Autoload(CernLogDB,datasource='MEASDB_PRO_DEFAULT')
 

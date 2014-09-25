@@ -30,6 +30,7 @@ class LocalIdxDB(SearchName,object):
     indexfn=IdxStore._indexname
     self.tables={}
     self.lookup=LookUp()
+    print os.path.join(self.dirname,'*',indexfn)
     for i in glob(os.path.join(self.dirname,'*',indexfn)):
       dirname,indexname=os.path.split(i)
       table=IdxStore(dirname)

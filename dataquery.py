@@ -221,6 +221,8 @@ class DataQuery(SearchName,object):
       datanew[vn]=tnew,vnew
     dq=self.copy()
     dq.data=datanew
+    self._setshortcuts()
+    self._emptycache()
     return dq
   def copy(self,**argsn):
     """copy source including data"""
@@ -268,7 +270,7 @@ class DataQuery(SearchName,object):
                        realtime=False):
     row,col=self.subplotchoices[len(self.names)]
     for i,name in enumerate(self.names):
-      pl.subplot(row,col,i)
+      pl.subplot(row,col,i+1)
       t,val=self.data[name]
       val=self.flatten(name)
       print "dq.flatten('%s')"%name

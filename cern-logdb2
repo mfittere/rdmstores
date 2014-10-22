@@ -1,0 +1,7 @@
+#!/bin/sh
+
+#  2014/09/30 Riccardo De Maria
+
+DIST_DIR="/afs/cern.ch/group/si/slap/bin/logging-data-extractor"
+
+java -jar $DIST_DIR/accsoft-cals-extractor-client-nodep.jar "$@"

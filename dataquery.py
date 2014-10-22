@@ -48,13 +48,13 @@ def get_xlim_date():
   return dumpdate(xa),dumpdate(xb)
 
 
-def int2keyword(i):
-  out=''
-  while i>=(18)**len(out)-1:
-    pos=len(out)
-    digit=(i//(18**pos))%18
-    out+=chr(digit+97)
-  return out
+def int2keyword(n):
+    n=int(n)
+    s = (n==0) and "a" or ""
+    while n!=0:
+        s = chr(n % 26 +97) + s
+        n = n / 26
+    return s
 
 def subdict(d,names):
   return dict([(k,d[k]) for k in names if k in d])
@@ -214,15 +214,14 @@ class DataQuery(SearchName,object):
       self._cachedflatten[name]=val
       return val
   def interpolate(self,tnew):
-    datanew=self.data.copy()
+    datanew={}
     for vn in self.names:
       t,v=self.data[vn]
       vnew=np.interp(tnew,t,v)
       datanew[vn]=tnew,vnew
-    dq=self.copy()
-    dq.data=datanew
-    self._setshortcuts()
-    self._emptycache()
+    t1=tnew[0]
+    t2=tnew[-1]
+    dq=DataQuery(self.source,self.names,t1,t2,datanew,**self.options)
     return dq
   def copy(self,**argsn):
     """copy source including data"""

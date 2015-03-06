@@ -1,5 +1,6 @@
 #!/bin/bash
 
-SCRIPTPATH=`pwd -P`
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+echo $DIR
 
-java -jar $SCRIPTPATH/accsoft-cals-extractor-client-nodep.jar "$@"
+java -jar $DIR/accsoft-cals-extractor-client-nodep.jar "$@"

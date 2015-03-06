@@ -1,0 +1,3 @@
+#!/bin/sh
+
+java -jar accsoft-cals-extractor-client-nodep.jar "$@"

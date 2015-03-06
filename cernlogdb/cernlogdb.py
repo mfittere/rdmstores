@@ -24,6 +24,8 @@ import time as _t
 exe_path=os.path.dirname(os.path.abspath(__file__))
 exe_path=os.path.join(exe_path,'cern-logdb')
 
+print exe_path
+
 conf_template="""\
 CLIENT_NAME=%s
 APPLICATION_NAME=%s

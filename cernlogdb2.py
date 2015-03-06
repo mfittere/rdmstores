@@ -10,7 +10,8 @@ from dataquery import DataQuery
 
 from localdate import parsedate,dumpdate,SearchName
 
-varlistfn=os.path.join(os.path.split(__file__),'cernlogdb_varlist.pky')
+dirname=os.path.dirname(os.path.abspath(__file__))
+varlistfn=os.path.join(dirname,'cernlogdb_varlist.pky')
 varlist=cPickle.load(open(varlistfn))
 
 

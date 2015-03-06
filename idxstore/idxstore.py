@@ -1,7 +1,7 @@
 import os
 
 import numpy as np
-import simplejson
+import json as simplejson
 
 from rawdata import RawData
 

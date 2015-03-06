@@ -27,6 +27,11 @@ varlist=cPickle.load(open(varlistfn))
 #  out=list(set(out))
 #  return out
 
+
+exe_path=os.path.dirname(os.path.abspath(__file__))
+exe_path=os.path.join(exe_path,'cern-logdb3')
+
+
 #from objdebug import ObjDebug as object
 class CernLogDB(SearchName,object):
   conf_template="""\
@@ -47,7 +52,7 @@ UNIX_TIME_OUTPUT=%s"""
                timezone='LOCAL_TIME',
                file_dir='./',
                unix_time_output='TRUE',
-               exe_path='cern-logdb3',
+               exe_path=exe_path,
                conffn='./ldb.conf'):
     self.client_name=client_name
     self.app_name=app_name

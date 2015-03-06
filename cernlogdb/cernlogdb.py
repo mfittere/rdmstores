@@ -22,7 +22,7 @@ import time as _t
 
 
 exe_path=os.path.dirname(os.path.abspath(__file__))
-exe_path=os.path.join(exe_path,'cern-logdb2')
+exe_path=os.path.join(exe_path,'cern-logdb3')
 
 print exe_path
 

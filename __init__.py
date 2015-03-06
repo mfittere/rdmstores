@@ -24,8 +24,8 @@ class Autoload(object):
 
 
 lcldb =Autoload(LocalIdxDB,"/home/rdemaria/data/lhcfilldata/datadb")
-logdb =Autoload(CernLogDB,datasource='LHCLOG_PRO_DEFAULT')
-measdb=Autoload(CernLogDB,datasource='MEASDB_PRO_DEFAULT')
+logdb =CernLogDB(datasource='LHCLOG_PRO_DEFAULT')
+measdb=CernLogDB(datasource='MEASDB_PRO_DEFAULT')
 
 
 #def rdmstore():

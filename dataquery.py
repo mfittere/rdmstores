@@ -336,9 +336,9 @@ class DataQuery(SearchName,object):
     4:(2,2),5:(2,3),6:(2,3),
     7:(3,3),8:(3,3),9:(3,3)}
   figchoices={
-    1:(8,6),2:(2,1),3:(3,1),
-    4:(10,10),5:(2,3),6:(2,3),
-    7:(3,3),8:(3,3),9:(3,3)}
+    1:(8,6),2:(8,6),3:(8,6),
+    4:(10,10),5:(12,10),6:(12,10),
+    7:(12,10),8:(12,10),9:(12,10)}
   def plot_specgramflat(self,NFFT=1024,Fs=1,noverlap=0,fmt='%H:%M:%S',
                        realtime=False):
     """plot a spectogram of the data, where NFFT, Fs and noverlap are 

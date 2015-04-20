@@ -1,4 +1,4 @@
-import time
+import time,pytz,datetime
 import re
 
 
@@ -14,11 +14,26 @@ def parsedate(t):
     return parsedate_myl(t)
 
 def dumpdate(t,fmt='%Y-%m-%d %H:%M:%S.SSS'):
+  """converts unix time to locale time"""
   ti=int(t)
   tf=t-ti
   s=time.strftime(fmt,time.localtime(t))
   if 'SSS' in s:
     s=s.replace('SSS','%03d'%(tf*1000))
+  return s
+
+def dumpdateutc(t,fmt='%Y-%m-%d %H:%M:%S.SSS'):
+  """converts unix time [float] to utc time [string]"""
+  ti=int(t)
+  tf=t-ti
+  geneve = pytz.timezone('Europe/Berlin')
+  utc=pytz.utc
+  gen_dt=geneve.localize(datetime.datetime.fromtimestamp(t),is_dst=True)#take daylight saving time into account
+  utc_dt=gen_dt.astimezone(utc)
+  s=utc_dt.strftime(fmt)
+  if 'SSS' in s:
+#    s=s.replace('SSS','%03d'%(tf*1000))
+    s=s.replace('.SSS','')
   return s
 
 

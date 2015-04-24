@@ -3,9 +3,9 @@ import time
 import numpy as np
 import matplotlib
 import matplotlib.pyplot as pl
+import matplotlib.gridspec as gridspec
 
-from localdate import parsedate,dumpdate,SearchName
-
+from localdate import parsedate,dumpdate,dumpdateutc,SearchName
 
 def flattenoverlap(v,test=100,start=0):
   #Merge overlapping array of data. Expecting data in axis 1
@@ -27,7 +27,6 @@ def flattenoverlap(v,test=100,start=0):
   print "average overlap %.2f samples"%np.average(stat)
   return np.hstack(out)
 
-
 class rdmDateFormatter(matplotlib.ticker.Formatter):
   def __call__(self,x,pos=None):
     return dumpdate(x,fmt='%Y-%m-%d\n%H:%M:%S.SSS')
@@ -39,6 +38,12 @@ def set_xaxis_date(ax=None,bins=6):
   ax.xaxis.major.locator._nbins=bins
   pl.draw()
 
+def set_xaxis_utctime(ax=None):
+  if ax is None:
+    ax=pl.gca()
+  ax.xaxis.set_major_formatter(rdmTimeFormatter())
+  ax.xaxis.major.locator._nbins=6
+  pl.draw()
 
 def set_xlim_date(xa,xb):
   pl.xlim(parsedate(xa),parsedate(xb))
@@ -234,7 +239,23 @@ class DataQuery(SearchName,object):
     dq=self.copy(**argsn)
     dq.reload()
     return dq
-  def plot_2d(self,vscale='auto',rel_time=False,date_axes=True):
+  def get_ts_bmode(self,bm='HX:BMODE_SQUEEZE'):
+    """create list (fill,starttime,endtime) of timestamps with
+    beam modes=bm using 'LHCLOG_PRO_DEFAULT' as default
+    database"""
+    if bm not in self.names:
+      self.add_sets([bm])
+    tbmode,nbmode=self.data[bm]
+    start=tbmode[np.where(nbmode==1)]
+    try:
+      end  =tbmode[np.where(nbmode==1)[0]+1]
+    except IndexError:#catch exception in case last entry of array is 1
+      start=start[:-1]
+      end  =tbmode[np.where(nbmode==1)[0][:-1]+1]
+      print 'time window for bm='+bm+'lies partly outside the requested time window'
+    return zip(map(dumpdate,start),map(dumpdate,end))
+  def plot_2d(self,vscale='auto',rel_time=False,date_axes=True,timezone='local'):
+    """plot data with date in local time"""
     for i,name in enumerate(self.names):
       t,v=self.data[name]
       if rel_time==True:
@@ -256,22 +277,72 @@ class DataQuery(SearchName,object):
         vvscale=vscale
       pl.plot(t,v*vvscale,'-',label=lbl)
       if date_axes==True:
-        set_xaxis_date()
+        if timezone == 'utc': set_xaxis_utctime()
+        else:  set_xaxis_date()
       else:
         pl.xlabel("time [sec]")
       pl.legend(loc=0)
       pl.grid(True)
+  def plot_2d_sub(self,vscale='auto',rel_time=False,date_axes=True,xlabel=None,ylabel=None,title=None,timezone='local'):
+    w,h    =self.figchoices[len(self.names)]
+    row,col=self.subplotchoices[len(self.names)]
+    fig=pl.figure(figsize=(w,h))
+    if title!=None: fig.suptitle(title, fontsize=12)
+    gs =gridspec.GridSpec(row,col)
+    gs.update(hspace=.4,wspace=0.4)
+    for i,name in enumerate(self.names):
+      sb=fig.add_subplot(gs[i])
+      t,v=self.data[name]
+      if rel_time==True:
+        t=t-t[0]
+      if vscale=='auto':
+        vmax=np.max(abs(v))
+        vexp=np.floor(np.log10(vmax))
+        if abs(vexp)>50:
+          lbl=name
+          vvscale=1
+        else:
+          lbl='$x10^{%d}$ %s'%(int(vexp),name)
+          vvscale=10**-vexp
+      elif float(vscale)==1.0:
+        lbl=name
+        vvscale=1
+      else:
+        lbl='$%g$ %s'%(vscale,name)
+        vvscale=vscale
+      sb.plot(t,v*vvscale,'-')
+      sb.set_title(lbl,fontsize=12)
+      if date_axes==True:
+        if timezone == 'utc':
+          set_xaxis_utctime()
+          if xlabel==None: xlabel='UTC time'
+        else:
+          set_xaxis_date()
+          if xlabel==None: xlabel='local time'
+      else:
+        sb.xlabel("time [sec]")
+      sb.axes.get_yaxis().get_major_formatter().set_useOffset(False)
+      pl.setp(pl.xticks()[1], rotation=45)
+      if xlabel != None: sb.set_xlabel(xlabel)
+      if ylabel != None: sb.set_ylabel(ylabel)
+      sb.grid(True)
   subplotchoices={
     1:(1,1),2:(2,1),3:(3,1),
     4:(2,2),5:(2,3),6:(2,3),
     7:(3,3),8:(3,3),9:(3,3)}
+  figchoices={
+    1:(8,6),2:(8,6),3:(8,6),
+    4:(10,10),5:(12,10),6:(12,10),
+    7:(12,10),8:(12,10),9:(12,10)}
   def plot_specgramflat(self,NFFT=1024,Fs=1,noverlap=0,fmt='%H:%M:%S',
                        realtime=False):
+    """plot a spectogram of the data, where NFFT, Fs and noverlap are 
+    the options defined in specgram"""
     row,col=self.subplotchoices[len(self.names)]
     for i,name in enumerate(self.names):
       pl.subplot(row,col,i+1)
       t,val=self.data[name]
-      val=self.flatten(name)
+      val=self.flatten(name)#flatten data as spectogram takes the complete data array as input
       print "dq.flatten('%s')"%name
       im=pl.specgram(val,NFFT=NFFT,Fs=Fs,noverlap=noverlap)[-1]
       pl.title(name)
@@ -293,8 +364,36 @@ class DataQuery(SearchName,object):
       im.set_extent([t[0],t[-1],0,0.5])
     set_xaxis_date()
 
-
-
+  def plot_specgramfft_simple(self,name,NFFT=None,Fs=1,fmt='%H:%M:%S',
+                       realtime=False,timezone='local',frange=None,vmax=None):
+    """plot a spectogram of existing FFT data, where
+       *Fs*: scalar
+       The sampling frequency (samples per time unit).  It is used
+       to calculate the Fourier frequencies, freqs, in cycles per time
+       unit. The default value is 2.
+       *vmin* *vmax*:
+       saturate values outside of this range"""
+    t,val=self.data[name]
+    if(NFFT==None): (nn,NFFT)=np.shape(val)
+    ff=np.linspace(1,NFFT,NFFT)*Fs/(NFFT*2)#frequency vector
+    if(frange <> None):#take only data in range (fstart,fend)=frange
+      fstart,fend=frange#get the index fstart, fend
+      df=Fs/(NFFT*2)#spacing between frequencies
+      ifstart=int(fstart/df)
+      ifend  =int(fend/df)+1
+      ff=ff[ifstart:ifend]
+      val=val[:,ifstart:ifend]
+    X,Y=np.meshgrid(t,ff)
+    pl.pcolormesh(X,Y,val.T,vmax=vmax)
+    pl.axis([X.min(), X.max(), Y.min(), Y.max()])
+    pl.title(name)
+    pl.ylabel('frequency [Hz]')
+    if timezone == 'utc':
+      set_xaxis_utctime()
+      pl.xlabel('UTC time')
+    else:
+      set_xaxis_date()
+      pl.xlabel('local time')
 
 
 

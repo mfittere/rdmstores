@@ -94,6 +94,7 @@ UNIX_TIME_OUTPUT=%s"""
       print "CernLogDB: querying\n  %s"%'\n  '.join(names)
       print "CernLogDB: '%s' <--> '%s'"% (t1,t2)
       print "CernLogDB: options %s %s"% (step,scale)
+    #query cern measurement database
     res=dbget(names,t1,t2,step=step,scale=scale,
                exe=self.exe_path,conf=None,
                client_name=self.client_name,
@@ -101,7 +102,7 @@ UNIX_TIME_OUTPUT=%s"""
                datasource=self.datasource,
                timezone=self.timezone,
                method=method,
-               types=types)
+               types=types,debug=debug)
     log='\n'.join(res['log'])
     if debug:
       print log
@@ -117,6 +118,7 @@ UNIX_TIME_OUTPUT=%s"""
     if len(bad)>0:
       print log
       raise IOError, "CernLogDB %s not retrieved" %','.join(bad)
+    #save data in better datastructure
     dq=DataQuery(self,names,parsedate(t1),parsedate(t2),data,step=step,scale=scale)
     if method=='LD':
       dq.trim()

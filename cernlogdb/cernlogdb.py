@@ -42,7 +42,7 @@ def dbget(vs,t1,t2=None,step=None,scale=None,exe=exe_path,conf=None,
           file_dir='./',
           unix_time_output='TRUE',
           method='DS',
-          types=(float,float),debug=False,):
+          types=(float,float),debug=False):
   """Query the CERN measurement database and return data
   Usage dbget("SPS.BCTDC.31832:INT","2010-06-10 00:00:00","2010-06-10 23:59:59",step='20 SECOND')
 

@@ -27,20 +27,15 @@ def flattenoverlap(v,test=100,start=0):
   print "average overlap %.2f samples"%np.average(stat)
   return np.hstack(out)
 
-
 class rdmDateFormatter(matplotlib.ticker.Formatter):
   def __call__(self,x,pos=None):
     return dumpdate(x,fmt='%Y-%m-%d\n%H:%M:%S.SSS')
 
-class rdmTimeFormatter(matplotlib.ticker.Formatter):
-  def __call__(self,x,pos=None):
-    return dumpdateutc(x,fmt='%H:%M:%S.SSS')
-
-def set_xaxis_date(ax=None):
+def set_xaxis_date(ax=None,bins=6):
   if ax is None:
     ax=pl.gca()
   ax.xaxis.set_major_formatter(rdmDateFormatter())
-  ax.xaxis.major.locator._nbins=6
+  ax.xaxis.major.locator._nbins=bins
   pl.draw()
 
 def set_xaxis_utctime(ax=None):

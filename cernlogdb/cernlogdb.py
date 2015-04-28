@@ -24,7 +24,7 @@ import time as _t
 exe_path=os.path.dirname(os.path.abspath(__file__))
 exe_path=os.path.join(exe_path,'cern-logdb3')
 
-print exe_path
+#print exe_path
 
 conf_template="""\
 CLIENT_NAME=%s
@@ -34,7 +34,7 @@ TIMEZONE=%s
 FILE_DIRECTORY=%s
 UNIX_TIME_OUTPUT=%s"""
 
-def dbget(vs,t1,t2=None,step=None,scale=None,filename='output.csv',format='CSV',exe=exe_path,conf=None,
+def dbget(vs,t1,t2=None,step=None,scale=None,filename='dummy',format='CSV',exe=exe_path,conf=None,
           client_name='BEAM_PHYSICS',
           app_name='LHC_MD_ABP_ANALYSIS',
           datasource='LHCLOG_PRO_DEFAULT',
@@ -70,14 +70,16 @@ def dbget(vs,t1,t2=None,step=None,scale=None,filename='output.csv',format='CSV',
                     LHCLOG_PRO_ONLY, LHCLOG_TEST_ONLY, MEASDB_PRO_ONLY
     <tz> one of 'UTC_TIME' 'LOCAL_TIME'
   """
+#  cmd=mkcmd(vs,t1,t2,step,scale,exe,'dummy','CSV',method,
+#             conf,client_name,app_name,datasource,timezone,file_dir,unix_time_output)
   cmd=mkcmd(vs,t1,t2,step,scale,exe,filename,format,method,
-            conf,client_name,app_name,datasource,timezone,file_dir,unix_time_output)
-  if debug:
-    print cmd
+             conf,client_name,app_name,datasource,timezone,file_dir,unix_time_output)
   os.system(cmd)
-  fh=open(os.path.join(file_dir,filename))
+  fh=file(os.path.join(file_dir,filename+'.'+format))
   data=load(fh,types=types)
   fh.close()
+  if debug==False:
+    os.unlink(os.path.join(file_dir,filename+'.'+format))
   return data
 
 def mkcmd(vs,t1,t2,step=None,scale=None,
@@ -147,13 +149,9 @@ def mkcmd(vs,t1,t2,step=None,scale=None,
       cmd+=' -IT "%s" -NI "%s"' %(it,ni)
     else:
       raise ValueError,'cernlogdb: %s step not supported'%it
-  print filename
   if filename:
-    print 'filename'
     cmd+=' -N "%s"' % filename
-  print format
   if format:
-    print 'format'
     cmd+=' -F "%s"' % format
   if method:
     cmd+=' -M "%s"' % method

@@ -34,7 +34,7 @@ TIMEZONE=%s
 FILE_DIRECTORY=%s
 UNIX_TIME_OUTPUT=%s"""
 
-def dbget(vs,t1,t2=None,step=None,scale=None,exe=exe_path,conf=None,
+def dbget(vs,t1,t2=None,step=None,scale=None,filename='output.csv',format='CSV',exe=exe_path,conf=None,
           client_name='BEAM_PHYSICS',
           app_name='LHC_MD_ABP_ANALYSIS',
           datasource='LHCLOG_PRO_DEFAULT',
@@ -47,19 +47,19 @@ def dbget(vs,t1,t2=None,step=None,scale=None,exe=exe_path,conf=None,
   Usage dbget("SPS.BCTDC.31832:INT","2010-06-10 00:00:00","2010-06-10 23:59:59",step='20 SECOND')
 
   Arguments:
-    vs:     name of the variables in the database: comma separated or list
-    t1,t2:  start and end time as string in the %Y-%m-%d %H:%M:%S.SSS format
-            or unix time
-    step:   For multiple file request '<n> <size>'
-    scale:  For scaling algoritm '<n> <size> <alg>'
-    format: For output file format in CSV, XLS, TSV, MATHEMATICA
-    filename:         String for output name
-    conf: Configuration file name, if None, file is created from options
-    client_name:      The name of the client (must be defined together with the BE/CO/DM section)
-    app_name: The name of the application (must be defined together with the BE/CO/DM section)
-    datasource: Where the data should be extracted '<dbname>'
-    timezone: The time zone used for input and output data
-    file_dir: Defines the folder where output files will be written
+    vs:          name of the variables in the database: comma separated or list
+    t1,t2:       start and end time as string in the %Y-%m-%d %H:%M:%S.SSS format
+                 or unix time
+    step:        For multiple file request '<n> <size>'
+    scale:       For scaling algoritm '<n> <size> <alg>'
+    format:      For output file format in CSV, XLS, TSV, MATHEMATICA
+    filename:    String for output name
+    conf:        Configuration file name, if None, file is created from options
+    client_name: The name of the client (must be defined together with the BE/CO/DM section)
+    app_name:    The name of the application (must be defined together with the BE/CO/DM section)
+    datasource:  Where the data should be extracted '<dbname>'
+    timezone:    The time zone used for input and output data
+    file_dir:    Defines the folder where output files will be written
     unix_time_output: Timestamp are written in seconds for epoch 'TRUE' or FALSE
 
   where:
@@ -70,25 +70,25 @@ def dbget(vs,t1,t2=None,step=None,scale=None,exe=exe_path,conf=None,
                     LHCLOG_PRO_ONLY, LHCLOG_TEST_ONLY, MEASDB_PRO_ONLY
     <tz> one of 'UTC_TIME' 'LOCAL_TIME'
   """
-  cmd=mkcmd(vs,t1,t2,step,scale,exe,None,None,method,
+  cmd=mkcmd(vs,t1,t2,step,scale,exe,filename,format,method,
             conf,client_name,app_name,datasource,timezone,file_dir,unix_time_output)
   if debug:
     print cmd
-  fh=os.popen(cmd)
+  os.system(cmd)
+  fh=open(os.path.join(file_dir,filename))
   data=load(fh,types=types)
   fh.close()
   return data
 
 def mkcmd(vs,t1,t2,step=None,scale=None,
-          exe=exe_path,filename=None,format=None,method='DS',
+          exe=exe_path,filename='output.csv',format='CSV',method='DS',
           conf=None,
           client_name='BEAM_PHYSICS',
           app_name='LHC_MD_ABP_ANALYSIS',
           datasource='LHCLOG_PRO_DEFAULT',
           timezone='LOCAL_TIME',
           file_dir='./',
-          unix_time_output='TRUE',
-         ):
+          unix_time_output='TRUE'):
   """Produce a string for the CERN logging database command line tool.
 
   Usage getdata("SPS.BCTDC.31832:INT","2010-06-10 00:00:00","2010-06-10 23:59:59",step='20 SECOND')
@@ -147,9 +147,13 @@ def mkcmd(vs,t1,t2,step=None,scale=None,
       cmd+=' -IT "%s" -NI "%s"' %(it,ni)
     else:
       raise ValueError,'cernlogdb: %s step not supported'%it
+  print filename
   if filename:
+    print 'filename'
     cmd+=' -N "%s"' % filename
+  print format
   if format:
+    print 'format'
     cmd+=' -F "%s"' % format
   if method:
     cmd+=' -M "%s"' % method

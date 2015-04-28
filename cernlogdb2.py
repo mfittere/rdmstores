@@ -102,9 +102,9 @@ UNIX_TIME_OUTPUT=%s"""
                timezone=self.timezone,
                method=method,
                types=types)
-    log='\n'.join(res['log'])
-    if debug:
-      print log
+    #log='\n'.join(res['log'])
+    #if debug:
+    #  print log
     if method=='LD':
       res=parse_ld(log,types)
     data={}

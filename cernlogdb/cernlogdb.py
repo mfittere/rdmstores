@@ -70,13 +70,15 @@ def dbget(vs,t1,t2=None,step=None,scale=None,exe=exe_path,conf=None,
                     LHCLOG_PRO_ONLY, LHCLOG_TEST_ONLY, MEASDB_PRO_ONLY
     <tz> one of 'UTC_TIME' 'LOCAL_TIME'
   """
-  cmd=mkcmd(vs,t1,t2,step,scale,exe,None,None,method,
+  cmd=mkcmd(vs,t1,t2,step,scale,exe,'dummy','CSV',method,
             conf,client_name,app_name,datasource,timezone,file_dir,unix_time_output)
   if debug:
     print cmd
-  fh=os.popen(cmd)
+  os.system(cmd)
+  fh=file('dummy.CSV')
   data=load(fh,types=types)
   fh.close()
+  os.unlink('dummy.CSV')
   return data
 
 def mkcmd(vs,t1,t2,step=None,scale=None,

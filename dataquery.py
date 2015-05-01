@@ -342,7 +342,23 @@ class DataQuery(SearchName,object):
     for i,name in enumerate(self.names):
       pl.subplot(row,col,i+1)
       t,val=self.data[name]
-      val=self.flatten(name)#flatten data as spectogram takes the complete data array as input
+      if len(val)>0:
+        val=self.flatten(name)#flatten data as spectogram takes the complete data array as input
+        print "dq.flatten('%s')"%name
+        im=pl.specgram(val,NFFT=NFFT,Fs=Fs,noverlap=noverlap)[-1]
+        pl.title(name)
+        if realtime:
+          im.set_extent([t[0],t[0]+len(val)/float(Fs),0,float(Fs)/2])
+        else:
+          im.set_extent([t[0],t[-1],0,0.5])
+        set_xaxis_date()
+      else:
+        print 'ERROR: no data available'
+  def plot_specgramflat_simple(self,name,NFFT=1024,Fs=1,noverlap=0,
+      fmt='%H:%M:%S', realtime=False):
+    t,val=self.data[name]
+    if len(val)>0:
+      val=self.flatten(name)
       print "dq.flatten('%s')"%name
       im=pl.specgram(val,NFFT=NFFT,Fs=Fs,noverlap=noverlap)[-1]
       pl.title(name)
@@ -351,18 +367,8 @@ class DataQuery(SearchName,object):
       else:
         im.set_extent([t[0],t[-1],0,0.5])
       set_xaxis_date()
-  def plot_specgramflat_simple(self,name,NFFT=1024,Fs=1,noverlap=0,
-      fmt='%H:%M:%S', realtime=False):
-    t,val=self.data[name]
-    val=self.flatten(name)
-    print "dq.flatten('%s')"%name
-    im=pl.specgram(val,NFFT=NFFT,Fs=Fs,noverlap=noverlap)[-1]
-    pl.title(name)
-    if realtime:
-      im.set_extent([t[0],t[0]+len(val)/float(Fs),0,float(Fs)/2])
     else:
-      im.set_extent([t[0],t[-1],0,0.5])
-    set_xaxis_date()
+      print 'ERROR: no data available'
 
   def plot_specgramfft_simple(self,name,NFFT=None,Fs=1,fmt='%H:%M:%S',
                        realtime=False,timezone='local',frange=None,vmax=None):
@@ -374,26 +380,30 @@ class DataQuery(SearchName,object):
        *vmin* *vmax*:
        saturate values outside of this range"""
     t,val=self.data[name]
-    if(NFFT==None): (nn,NFFT)=np.shape(val)
-    ff=np.linspace(1,NFFT,NFFT)*Fs/(NFFT*2)#frequency vector
-    if(frange <> None):#take only data in range (fstart,fend)=frange
-      fstart,fend=frange#get the index fstart, fend
-      df=Fs/(NFFT*2)#spacing between frequencies
-      ifstart=int(fstart/df)
-      ifend  =int(fend/df)+1
-      ff=ff[ifstart:ifend]
-      val=val[:,ifstart:ifend]
-    X,Y=np.meshgrid(t,ff)
-    pl.pcolormesh(X,Y,val.T,vmax=vmax)
-    pl.axis([X.min(), X.max(), Y.min(), Y.max()])
-    pl.title(name)
-    pl.ylabel('frequency [Hz]')
-    if timezone == 'utc':
-      set_xaxis_utctime()
-      pl.xlabel('UTC time')
+    if len(val)>0:
+      if(NFFT==None): (nn,NFFT)=np.shape(val)
+      print '%d*2 values used for FFT'%(NFFT)
+      ff=np.linspace(1,NFFT,NFFT)*Fs/(NFFT*2)#frequency vector
+      if(frange <> None):#take only data in range (fstart,fend)=frange
+        fstart,fend=frange#get the index fstart, fend
+        df=Fs/(NFFT*2)#spacing between frequencies
+        ifstart=int(fstart/df)
+        ifend  =int(fend/df)+1
+        ff=ff[ifstart:ifend]
+        val=val[:,ifstart:ifend]
+      X,Y=np.meshgrid(t,ff)
+      pl.pcolormesh(X,Y,val.T,vmax=vmax)
+      pl.axis([X.min(), X.max(), Y.min(), Y.max()])
+      pl.title(name)
+      pl.ylabel('frequency [Hz]')
+      if timezone == 'utc':
+        set_xaxis_utctime()
+        pl.xlabel('UTC time')
+      else:
+        set_xaxis_date()
+        pl.xlabel('local time')
     else:
-      set_xaxis_date()
-      pl.xlabel('local time')
+      print 'ERROR: no data available'
 
 
 

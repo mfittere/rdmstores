@@ -3,4 +3,5 @@
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 echo $DIR
 
+echo " java -jar $DIR/accsoft-cals-extractor-client-nodep.jar "$@" "
 java -jar $DIR/accsoft-cals-extractor-client-nodep.jar "$@"

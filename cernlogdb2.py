@@ -29,7 +29,7 @@ varlist=cPickle.load(open(varlistfn))
 
 
 exe_path=os.path.dirname(os.path.abspath(__file__))
-exe_path=os.path.join(exe_path,'cern-logdb3')
+exe_path=os.path.join(exe_path,'cern-logdb')
 
 
 #from objdebug import ObjDebug as object

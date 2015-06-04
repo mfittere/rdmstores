@@ -276,12 +276,13 @@ def combine_data(data,vtype=float,ttype=float):
     t,v=data[k]
     #in case data array v is empty, delete data
     #the database give the timestamps and no data back in this case
-    if _np.array(v).dtype=='S1':
+    try:
+      t=_np.array(t,dtype=ttype)
+      v=_np.array(v,dtype=vtype)
+    except ValueError:
       t=[]
       v=[]
       print 'ERROR: no data available for chosen timeslot'
-    t=_np.array(t,dtype=ttype)
-    v=_np.array(v,dtype=vtype)
     if v.shape[-1]==1:
       v=v.reshape(v.shape[0])
     data[k]=[t,v]

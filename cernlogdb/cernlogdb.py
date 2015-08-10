@@ -3,7 +3,7 @@ Wrapper around the  CERN logging database command line tool
 
 Usage:
   mkcmd:  Produce a string for the CERN logging database command line tool
-  getdb:  Query and parse the results
+  dbget:  Query and parse the results
   open:   Parse and return the output of a query from a file name
   load:   Parse and return the output of a query from a file object
   pprint: Describe the output of getdb, open, load

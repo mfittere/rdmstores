@@ -260,6 +260,8 @@ class DataQuery(SearchName,object):
       t,v=self.data[name]
       if rel_time==True:
         t=t-t[0]
+      if v.size==0:#empty array
+        vscale=1.0
       if vscale=='auto':
         vmax=np.max(abs(v))
         vexp=np.floor(np.log10(vmax))
@@ -295,6 +297,8 @@ class DataQuery(SearchName,object):
       t,v=self.data[name]
       if rel_time==True:
         t=t-t[0]
+      if v.size==0:#empty array
+        vscale=1.0
       if vscale=='auto':
         vmax=np.max(abs(v))
         vexp=np.floor(np.log10(vmax))

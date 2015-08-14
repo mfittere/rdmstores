@@ -1,0 +1,12 @@
+download jar from:
+https://wikis.cern.ch/download/attachments/54067820/accsoft-cals-extractor-client-nodep.jar?version=6&modificationDate=1429887775465&api=v2
+cern-logdb2:
+use jar provided on afs
+cern-logdb3:
+use jar saved locally
+
+check which options are available:
+java -jar /Users/mfittere/lib/python/rdmstores/accsoft-cals-extractor-client-nodep.jar
+
+test command:
+java -jar /Users/mfittere/lib/python/rdmstores/accsoft-cals-extractor-client-nodep.jar -vs LHC.BQBBQ.CONTINUOUS.B1:ACQ_DATA_H -t1 "2015-04-26 15:41:03.934" -C ldb.conf -t2 "2015-04-26 15:42:03.934" -N dummy -F CSV -M DS

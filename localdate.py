@@ -22,7 +22,7 @@ def dumpdate(t,fmt='%Y-%m-%d %H:%M:%S.SSS'):
     s=s.replace('SSS','%03d'%(tf*1000))
   return s
 
-def tounixtime(t,fmt='%Y-%m-%d %H:%M:%S.SSS'):
+def strpunix(t,fmt='%Y-%m-%d %H:%M:%S.SSS'):
   if '.SSS' in fmt:
     mt = t.split('.')[1] #get the ms
     t  = t.split('.')[0]
@@ -47,6 +47,15 @@ def dumpdateutc(t,fmt='%Y-%m-%d %H:%M:%S.SSS'):
     s=s.replace('.SSS','')
   return s
 
+def addtimedelta(t,dt):
+  """add *dt* seconds to t in unix time"""
+  dt=datetime.timedelta(seconds=dt)
+  t = datetime.datetime.fromtimestamp(t)+dt
+  return time.mktime(t.timetuple())
+
+def argmtime(t=[0],t0=0):
+  """get the index with the closest timestamp to *t0*"""
+  return _np.argmin(_np.abs(t - t0))
 
 #from objdebug import ObjDebug as object
 

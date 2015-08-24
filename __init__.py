@@ -1,6 +1,6 @@
 from localidxdb import LocalIdxDB
 from cernlogdb2 import CernLogDB
-from localdate import parsedate,dumpdate,tounixtime,dumpdateutc
+from localdate import parsedate,dumpdate,strpunix,dumpdateutc,addtimedelta,argmtime
 from dataquery import DataQuery,flattenoverlap, set_xaxis_date, set_xlim_date, get_xlim_date
 
 class Autoload(object):

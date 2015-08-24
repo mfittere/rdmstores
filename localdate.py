@@ -22,6 +22,17 @@ def dumpdate(t,fmt='%Y-%m-%d %H:%M:%S.SSS'):
     s=s.replace('SSS','%03d'%(tf*1000))
   return s
 
+def tounixtime(t,fmt='%Y-%m-%d %H:%M:%S.SSS'):
+  if '.SSS' in fmt:
+    mt = t.split('.')[1] #get the ms
+    t  = t.split('.')[0]
+    fmt = fmt.replace('.SSS','')
+  else:
+    mt = 0 #set ms to 0 if not given
+  t     = datetime.datetime.strptime(t,fmt)
+  tunix = time.mktime(t.timetuple()) + float(mt)*1.e-3
+  return tunix
+
 def dumpdateutc(t,fmt='%Y-%m-%d %H:%M:%S.SSS'):
   """converts unix time [float] to utc time [string]"""
   ti=int(t)

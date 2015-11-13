@@ -272,17 +272,25 @@ def load(fh,sep=',',t1=None,t2=None,debug=False,nmax=1e99,types=(float,float)):
 
 def combine_data(data,vtype=float,ttype=float):
   """Combine and change data type"""
+#  print data['datavars']
+#  print data[data['datavars'][0]]
   for ik,k in enumerate(data['datavars']):
     t,v=data[k]
-    #in case data array v is empty, delete data
-    #the database give the timestamps and no data back in this case
     try:
       t=_np.array(t,dtype=ttype)
       v=_np.array(v,dtype=vtype)
     except ValueError:
-      t=[]
-      v=[]
-      print 'ERROR: no data available for chosen timeslot'
+      #array of different arrays
+      #-> define array(array(),array())
+      try:
+        t=_np.array(t,dtype=ttype)
+        v=_np.array([ _np.array(v[i],dtype=vtype) for i in range(len(t))] )
+      except ValueError:
+      #in case data array v is empty, delete data
+      #the database give the timestamps and no data back in this case
+        t=[]
+        v=[]
+        print 'ERROR: no data available for chosen timeslot'
     if v.shape[-1]==1:
       v=v.reshape(v.shape[0])
     data[k]=[t,v]

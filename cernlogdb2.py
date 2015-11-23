@@ -42,6 +42,7 @@ TIMEZONE=%s
 FILE_DIRECTORY=%s
 UNIX_TIME_OUTPUT=%s"""
   def get_names(self):
+    """returns all variable names"""
     return varlist
   def __repr__(self):
     return "CernLogDB('%s')"%self.datasource

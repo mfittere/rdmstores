@@ -61,6 +61,8 @@ def argmtime(t=[0],t0=0):
 
 class SearchName(object):
   def search(self,regexp):
+    """returns all variables names which match the 
+    regular expression regexp"""
     r=re.compile(regexp,re.IGNORECASE)
     res=[ l for l in self.get_names() if r.search(l) is not None]
     return res
